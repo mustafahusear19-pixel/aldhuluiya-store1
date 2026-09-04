@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق خدمات الضلوعية الشامل</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
+                            300: '#93c5fd', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome & Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen pb-24 transition-colors duration-300">
+
+    <!-- Reading Progress Bar -->
+    <div id="reading-progress" class="fixed top-0 left-0 h-1 bg-brand-600 z-[60]" style="width:0%"></div>
+
+    <!-- Top Announcement Bar -->
+    <div id="announcement-bar" class="hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[11px] font-bold py-2 z-50"></div>
+
+    <!-- Focus Mode Exit Bar -->
+    <div id="focus-exit-bar" class="hidden fixed top-0 left-0 right-0 z-[70] bg-slate-900 text-white text-xs font-black py-2.5 flex justify-center items-center gap-2 cursor-pointer" onclick="toggleFocusMode()">
+        <i class="fa-solid fa-xmark"></i> <span id="focus-exit-label">الخروج من وضع التركيز</span>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 px-4 py-3 shadow-sm flex justify-between items-center">
+        <div>
+            <span id="dynamic-greeting" class="text-[10px] font-bold text-brand-600 dark:text-brand-300 block"></span>
+            <h1 class="font-black text-brand-700 dark:text-brand-300 text-lg">خدمات الضلوعية 🚀</h1>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <!-- Points Badge -->
+            <div class="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-black px-2.5 py-1 rounded-xl flex items-center gap-1 border border-amber-200 dark:border-amber-700">
+                <i class="fa-solid fa-coins text-amber-500"></i>
+                <span id="user-points">150</span> ن
+            </div>
+
+            <!-- Dark Mode Toggle -->
+            <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 transition">
+                <i id="theme-icon" class="fa-solid fa-moon"></i>
+            </button>
+
+            <!-- Countdown Timer -->
+            <div id="countdown-chip" onclick="showOfferModal()" class="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 text-[10px] font-black px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer border border-red-200 dark:border-red-800" title="عرض اليوم">
+                <i class="fa-solid fa-stopwatch"></i><span id="countdown-time">--:--:--</span>
+            </div>
+
+            <!-- Language Switcher -->
+            <button id="lang-btn" onclick="toggleLanguage()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-black text-[10px] hover:bg-slate-200 transition">EN</button>
+
+            <!-- Focus Mode -->
+            <button id="focus-btn" onclick="toggleFocusMode()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 transition" title="وضع التركيز">
+                <i class="fa-solid fa-eye"></i>
+            </button>
+
+            <!-- Index / Quick NAV -->
+            <button onclick="openIndexDrawer()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 transition" title="فهرس سريع">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+
+            <!-- Dashboard -->
+            <button onclick="openDashboard()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 transition" title="لوحتي الشخصية">
+                <i class="fa-solid fa-user-gear"></i>
+            </button>
+
+            <!-- Admin Panel -->
+            <a href="admin.html" title="لوحة الإدارة" class="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 transition">
+                <i class="fa-solid fa-user-shield"></i>
+            </a>
+
+            <!-- Notifications Center -->
+            <button id="notif-btn" onclick="openNotifications()" class="relative p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 transition" title="الإشعارات">
+                <i class="fa-solid fa-bell"></i>
+                <span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            </button>
+
+            <!-- Wheel Button -->
+            <button onclick="openLuckyWheel()" class="wheel-pulse bg-amber-500 text-white font-black text-xs px-2.5 py-2 rounded-xl flex items-center gap-1 shadow">
+                🎡
+            </button>
+
+            <!-- Cart Button -->
+            <button onclick="toggleCartModal()" class="relative bg-brand-600 text-white p-2.5 rounded-xl shadow-md active:scale-95 transition">
+                <i class="fa-solid fa-basket-shopping text-base"></i>
+                <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Order Tracker Active Bar -->
+    <div id="active-tracker-bar" onclick="openTrackerModal()" class="hidden bg-emerald-600 text-white px-4 py-2 text-xs font-bold flex justify-between items-center cursor-pointer shadow-md">
+        <span class="flex items-center gap-2"><i class="fa-solid fa-motorcycle animate-bounce"></i> لديك طلب نشط قيد التوصيل...</span>
+        <span class="underline">تتبع الطلب</span>
+    </div>
+
+    <!-- Navigation Cards -->
+    <nav class="max-w-md mx-auto px-4 my-4 grid grid-cols-5 gap-2">
+        <div id="nav-btn-restaurants" onclick="switchMainTab('restaurants')" class="main-service-card active">
+            <div class="icon-box"><i class="fa-solid fa-utensils"></i></div>
+            <span>مطاعم</span>
+        </div>
+        <div id="nav-btn-grocery" onclick="switchMainTab('grocery')" class="main-service-card">
+            <div class="icon-box"><i class="fa-solid fa-cart-shopping"></i></div>
+            <span>مسواك</span>
+        </div>
+        <div id="nav-btn-taxi" onclick="switchMainTab('taxi')" class="main-service-card">
+            <div class="icon-box"><i class="fa-solid fa-taxi"></i></div>
+            <span>وصلني</span>
+        </div>
+        <div id="nav-btn-pharmacy" onclick="switchMainTab('pharmacy')" class="main-service-card">
+            <div class="icon-box"><i class="fa-solid fa-prescription-bottle-medical"></i></div>
+            <span>صيدلية</span>
+        </div>
+        <div id="nav-btn-maintenance" onclick="switchMainTab('maintenance')" class="main-service-card">
+            <div class="icon-box"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+            <span>صيانة</span>
+        </div>
+    </nav>
+
+    <main class="max-w-md mx-auto px-4">
+
+        <!-- 1. Restaurants Section -->
+        <section id="section-restaurants" class="service-section space-y-3">
+            <div class="flex gap-2 items-center">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-slate-400 text-sm"></i>
+                    <input id="search-input" oninput="handleSearch()" type="text" placeholder="ابحث عن وجبة أو مطعم..." class="w-full pl-3 pr-9 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none">
+                </div>
+                <button onclick="filterDietary('healthy')" class="px-3 py-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold whitespace-nowrap">
+                    🥗 <span id="healthy-label">صحي</span>
+                </button>
+                <button id="fav-filter-btn" onclick="toggleFavFilter()" class="px-3 py-2.5 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold whitespace-nowrap">
+                    ❤️ <span id="fav-count">0</span>
+                </button>
+            </div>
+
+            <!-- Sort + Bestsellers + Counter + Surprise -->
+            <div class="flex gap-2 items-center overflow-x-auto hide-scrollbar">
+                <select id="menu-sort" onchange="setMenuSort(this.value)" class="text-[11px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl px-2 py-2.5">
+                    <option value="default" id="sort-default">ترتيب: افتراضي</option>
+                    <option value="price-asc" id="sort-asc">السعر: الأقل أولاً</option>
+                    <option value="price-desc" id="sort-desc">السعر: الأعلى أولاً</option>
+                    <option value="name" id="sort-name">الاسم: أ-ي</option>
+                </select>
+                <button id="best-filter-btn" onclick="toggleBestFilter()" class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold whitespace-nowrap">🔥 <span id="best-label">الأكثر طلباً</span></button>
+                <span id="items-counter" class="text-[10px] font-bold text-slate-400 whitespace-nowrap px-1"></span>
+                <button onclick="surpriseMe()" class="px-3 py-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 rounded-xl text-xs font-bold whitespace-nowrap">🎲 <span id="surprise-label">فاجئني</span></button>
+            </div>
+
+            <!-- Express Order -->
+            <button onclick="expressOrder()" class="w-full bg-gradient-to-l from-amber-500 to-orange-500 text-white font-black text-[11px] py-2.5 rounded-xl shadow active:scale-95 transition">
+                ⚡ <span id="express-label">الطلب المعتاد — أعيد أصنافي المفضلة بضغطة</span>
+            </button>
+
+            <!-- Smart Recommendations -->
+            <div id="recommendations-strip" class="flex gap-2 overflow-x-auto hide-scrollbar"></div>
+
+            <!-- Live Search Suggestions -->
+            <div id="search-suggestions" class="hidden bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg text-xs z-40 max-h-72 overflow-y-auto"></div>
+
+            <!-- Group Order Calculator -->
+            <div id="group-calculator" class="hidden"></div>
+
+            <div id="restaurant-tabs" class="flex gap-2 overflow-x-auto hide-scrollbar py-1"></div>
+            <div id="restaurant-info" class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"></div>
+            <div id="category-tabs" class="flex gap-2 overflow-x-auto hide-scrollbar py-1"></div>
+            <div id="menu-items" class="grid grid-cols-1 gap-2.5"></div>
+
+            <!-- Quick Poll -->
+            <div id="quick-poll"></div>
+        </section>
+
+        <!-- 2. Grocery Section -->
+        <section id="section-grocery" class="service-section hidden space-y-3">
+            <!-- Budget Calculator Bar -->
+            <div class="bg-blue-50 dark:bg-slate-800 p-3 rounded-xl border border-blue-200 dark:border-slate-700 space-y-2 text-xs">
+                <div class="flex justify-between items-center gap-2">
+                    <span class="font-bold text-slate-600 dark:text-slate-300">ميزانية المسواك المتوقعة:</span>
+                    <div class="flex items-center gap-2">
+                        <span id="budget-warning" class="hidden text-red-600 font-black text-[10px]"></span>
+                        <span id="grocery-budget-display" class="font-black text-brand-600 dark:text-brand-400 text-sm">0 د.ع</span>
+                    </div>
+                </div>
+                <input id="grocery-budget" type="number" min="0" step="500" oninput="checkGroceryBudget()" placeholder="حدد ميزانيتك لتحذيرك عند التجاوز (اختياري)" class="w-full border border-blue-200 dark:border-slate-600 bg-transparent rounded-lg p-1.5 text-[11px]">
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2">
+                <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200">اكتب قائمة المسواك أو ارفق صورتها:</h3>
+                <textarea id="custom-grocery-text" rows="2" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs focus:outline-none" placeholder="مثال: 2 كيلو طماطم، قوطية معجون..."></textarea>
+                <div class="flex flex-wrap gap-1.5 items-center">
+                    <span id="templates-label" class="text-[10px] font-bold text-slate-400">قوالب جاهزة:</span>
+                    <button type="button" onclick="applyGroceryTemplate('veg')" class="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-1 rounded-lg">🥕 خضار أسبوعية</button>
+                    <button type="button" onclick="applyGroceryTemplate('basic')" class="text-[10px] font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 px-2 py-1 rounded-lg">🛒 بقالة أساسية</button>
+                    <button type="button" onclick="applyGroceryTemplate('breakfast')" class="text-[10px] font-bold bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-1 rounded-lg">🥛 فطور المنزل</button>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <label class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-bold text-xs py-2 rounded-lg text-center cursor-pointer border border-dashed border-slate-300 dark:border-slate-600">
+                        <i class="fa-solid fa-camera ml-1"></i> ارفق صورة القائمة
+                        <input type="file" id="grocery-file" class="hidden" onchange="showToast('تم إرفاق صورة القائمة')">
+                    </label>
+                    <button onclick="addCustomGroceryToCart()" class="flex-1 bg-brand-600 text-white font-bold text-xs py-2 rounded-lg hover:bg-brand-700 transition">+ إضافة للسلة</button>
+                </div>
+            </div>
+
+            <div id="grocery-category-tabs" class="flex gap-2 overflow-x-auto hide-scrollbar py-1"></div>
+            <div id="grocery-items" class="grid grid-cols-2 gap-2.5"></div>
+        </section>
+
+        <!-- 3. Taxi Section -->
+        <section id="section-taxi" class="service-section hidden">
+            <form onsubmit="handleTaxiOrder(event)" class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm">
+                <h3 class="font-bold text-sm border-b pb-2 dark:border-slate-700">حجز تكسي وخدمة توصيل</h3>
+                
+                <div>
+                    <label class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">نوع الخدمة والمركبة</label>
+                    <select id="taxi-type" onchange="calculateTaxiFare()" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                        <option value="normal">سيارة صالون عادية (3,000 د.ع)</option>
+                        <option value="vip">سيارة VIP حديثة (5,000 د.ع)</option>
+                        <option value="van">فان عائلي 7 راكب (7,000 د.ع)</option>
+                        <option value="cargo">سيارة حمل لنقل البضائع (8,000 د.ع)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                    <label class="flex items-center gap-2 text-xs font-bold text-pink-600 dark:text-pink-400 cursor-pointer">
+                        <input id="female-driver" type="checkbox" class="rounded text-pink-600">
+                        طلب سائقة أنثى (للعوائل والنساء) 👩
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">مكان الانطلاق</label>
+                        <input id="taxi-from" type="text" placeholder="الموقع الحالي GPS" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">الوجهة</label>
+                        <input id="taxi-to" type="text" required placeholder="مثال: السوق الداخلي" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                    </div>
+                </div>
+
+                <!-- Saved Destinations -->
+                <div id="saved-destinations" class="flex flex-wrap gap-1.5"></div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">موعد الرحلة</label>
+                        <select id="taxi-schedule" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                            <option value="now">الآن فوراً</option>
+                            <option value="30min">بعد 30 دقيقة</option>
+                            <option value="1hour">بعد ساعة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">رقم الهاتف</label>
+                        <input id="taxi-phone" type="tel" required placeholder="077xxxxxxxx" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2 border-t dark:border-slate-700 text-xs font-bold">
+                    <span>الأجرة التقديرية:</span>
+                    <span id="taxi-fare" class="text-brand-700 dark:text-brand-400 font-black">3,000 د.ع</span>
+                </div>
+                <button type="submit" class="w-full bg-brand-600 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-brand-700 transition">تأكيد طلب التكسي 🚕</button>
+
+                <!-- Trip History -->
+                <details class="text-[11px] font-bold">
+                    <summary class="cursor-pointer text-brand-600 dark:text-brand-300">🕘 <span id="trip-title">سجل الرحلات</span> (<span id="trip-count">0</span>)</summary>
+                    <div id="trip-history" class="mt-2 space-y-1.5"></div>
+                </details>
+            </form>
+        </section>
+
+        <!-- 4. Pharmacy Section -->
+        <section id="section-pharmacy" class="service-section hidden">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm">
+                <div class="flex justify-between items-center border-b dark:border-slate-700 pb-2">
+                    <h3 class="font-bold text-sm">طلب أدوية ومستلزمات طبية</h3>
+                    <span class="text-[10px] bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300 font-bold px-2 py-0.5 rounded-md">🚨 دعم الحالات الطارئة</span>
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">رفع صورة الوصفة (الروشتة):</label>
+                    <input type="file" id="rx-file" accept="image/*" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-1.5 text-xs">
+                </div>
+
+                <textarea id="pharmacy-text" rows="3" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs focus:outline-none" placeholder="أو اكتب اسماء الأدوية المطلوبة بالتفصيل هنا..."></textarea>
+                <div class="flex flex-wrap gap-1.5 items-center">
+                    <span class="text-[10px] font-bold text-slate-400">إضافة سريعة:</span>
+                    <button type="button" onclick="pharmacyQuickAdd('مسكنات')" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">💊 مسكنات</button>
+                    <button type="button" onclick="pharmacyQuickAdd('أدوية برد وسعال')" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">🤧 برد وسعال</button>
+                    <button type="button" onclick="pharmacyQuickAdd('فيتامينات ومكملات')" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">🍊 فيتامينات</button>
+                    <button type="button" onclick="pharmacyQuickAdd('مستحضرات جلدية')" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">🧴 جلدية</button>
+                    <button type="button" onclick="pharmacyQuickAdd('أدوية معدة')" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">🫃 معدة</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="sendPharmacyOrder()" class="col-span-2 bg-emerald-600 text-white font-bold text-xs py-2.5 rounded-xl hover:bg-emerald-700 transition flex items-center justify-center gap-1">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> إرسال الطلب للصيدلية الخافرة 💊
+                    </button>
+                    <a href="tel:+9647857381803" class="bg-red-600 text-white font-bold text-xs py-2.5 rounded-xl hover:bg-red-700 transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-phone text-sm"></i> طوارئ
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Maintenance Section -->
+        <section id="section-maintenance" class="service-section hidden space-y-3">
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                <span><i class="fa-solid fa-shield-halved"></i> جميع الخدمات مصحوبة بضمان 7 أيام</span>
+                <span class="font-bold underline cursor-pointer" onclick="Swal.fire('ضمان الخدمة','في حال عدم رضاك عن الصيانة، يتم إرسال فني آخر مجاناً خلال 7 أيام.','info')">الشروط</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div onclick="requestHomeService('كهربائي منازل')" class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-center cursor-pointer hover:border-brand-600 transition shadow-sm">
+                    <i class="fa-solid fa-bolt text-2xl text-amber-500 mb-2"></i>
+                    <h4 class="font-bold text-xs">كهربائي منازل</h4>
+                </div>
+                <div onclick="requestHomeService('سباك / صحيات')" class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-center cursor-pointer hover:border-brand-600 transition shadow-sm">
+                    <i class="fa-solid fa-faucet-drip text-2xl text-blue-500 mb-2"></i>
+                    <h4 class="font-bold text-xs">سباكة وصحيات</h4>
+                </div>
+                <div onclick="requestHomeService('تصليح سباليت وتبريد')" class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-center cursor-pointer hover:border-brand-600 transition shadow-sm">
+                    <i class="fa-solid fa-snowflake text-2xl text-cyan-500 mb-2"></i>
+                    <h4 class="font-bold text-xs">تبريد وسباليت</h4>
+                </div>
+                <div onclick="requestHomeService('ستلايت وتلفزيون')" class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-center cursor-pointer hover:border-brand-600 transition shadow-sm">
+                    <i class="fa-solid fa-tv text-2xl text-indigo-500 mb-2"></i>
+                    <h4 class="font-bold text-xs">ستلايت وتلفزيون</h4>
+                </div>
+            </div>
+
+            <!-- Visit time + Fault description -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
+                <label id="maint-time-label" class="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">وقت الزيارة المفضل:</label>
+                <select id="maintenance-time" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                    <option>أي وقت مناسب</option>
+                    <option>صباحاً (9 ص - 12 م)</option>
+                    <option>ظهراً (12 م - 4 م)</option>
+                    <option>مساءً (4 م - 9 م)</option>
+                </select>
+                <textarea id="maintenance-notes" rows="2" placeholder="وصف العطل باختصار (اختياري)" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs"></textarea>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Customization Modal for Food Items -->
+    <div id="customization-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-4 space-y-3">
+            <h3 id="custom-item-title" class="font-black text-sm">تخصيص الوجبة</h3>
+            
+            <div class="space-y-2 text-xs">
+                <label class="font-bold block">خيارات الحجم / الإضافة:</label>
+                <div class="space-y-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="item-size" value="عادي" checked class="text-brand-600"> حجم عادي
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="item-size" value="دبل" class="text-brand-600"> دبل / حجم كبير (+1,000 د.ع)
+                    </label>
+                </div>
+
+                <label class="font-bold block pt-2">ملاحظات خاصة (بدون بصل، حار...):</label>
+                <input type="text" id="item-note-input" placeholder="مثال: صوص إضافي، بدون طماطم" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="confirmCustomizedAddToCart()" class="flex-1 bg-brand-600 text-white font-bold py-2 rounded-xl text-xs">إضافة للسلة</button>
+                <button onclick="closeCustomizationModal()" class="px-3 bg-slate-200 dark:bg-slate-700 font-bold py-2 rounded-xl text-xs">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex justify-end">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md h-full p-4 flex flex-col justify-between cart-slide-animate overflow-y-auto">
+            <div>
+                <div class="flex justify-between items-center pb-3 border-b dark:border-slate-700">
+                    <h3 class="font-black text-base"><i class="fa-solid fa-basket-shopping text-brand-600"></i> سلة الطلبات</h3>
+                    <div class="flex items-center gap-2">
+                        <button onclick="reorderLast()" id="reorder-btn" class="text-[11px] font-bold text-brand-600 dark:text-brand-300 hover:underline">🔁 إعادة آخر طلب</button>
+                        <button onclick="clearCart()" class="text-[11px] font-bold text-red-500 hover:underline">تفريغ السلة</button>
+                        <button onclick="toggleCartModal()" class="text-slate-400 hover:text-slate-600 text-lg px-1">&times;</button>
+                    </div>
+                </div>
+
+                <div id="cart-items-container" class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[30vh] overflow-y-auto my-2"></div>
+
+                <div class="space-y-2 border-t dark:border-slate-700 pt-3">
+                    <!-- Promo Code input -->
+                    <div class="flex gap-1">
+                        <input id="promo-code-input" type="text" placeholder="كود الخصم (مثل DHILO10)" class="flex-1 border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                        <button onclick="applyPromoCode()" class="bg-slate-800 dark:bg-slate-700 text-white font-bold text-xs px-3 rounded-lg">تطبيق</button>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div>
+                        <label class="text-[11px] font-bold block mb-1">طريقة الدفع</label>
+                        <select id="payment-method" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                            <option value="cod">دفع نقداً عند الاستلام 💵</option>
+                            <option value="zincash">زين كاش (ZainCash) 📱</option>
+                            <option value="mastercard">ماستر كارد / كي كارد 💳</option>
+                        </select>
+                    </div>
+
+                    <input id="cust-name" type="text" placeholder="الاسم الكامل" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                    <input id="cust-phone" type="tel" placeholder="رقم الهاتف" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                    <textarea id="cust-notes" rows="2" placeholder="ملاحظات العنوان الدقيق" class="w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs"></textarea>
+                    
+                    <div class="flex flex-col gap-1 pt-1">
+                        <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                            <input id="send-location" type="checkbox" checked class="rounded text-brand-600"> إرفاق موقعي GPS تلقائياً
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400 cursor-pointer">
+                            <input id="is-gift" type="checkbox" class="rounded text-purple-600"> 🎁 هذا الطلب إهداء لشخص آخر (إخفاء الفاتورة)
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                            <input id="schedule-order" type="checkbox" onchange="toggleScheduleInput()" class="rounded text-brand-600"> 🗓️ جدولة الطلب لموعد لاحق
+                        </label>
+                        <input id="schedule-datetime" type="datetime-local" class="hidden w-full border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg p-2 text-xs">
+                    </div>
+
+                    <!-- Driver Tip -->
+                    <div class="flex items-center gap-2 text-xs font-bold">
+                        <span id="tip-label">إكرامية السائق:</span>
+                        <div id="tip-buttons" class="flex gap-1"></div>
+                    </div>
+
+                    <!-- Coupon Wallet -->
+                    <div id="coupon-wallet" class="space-y-1.5"></div>
+                </div>
+            </div>
+
+            <div class="border-t dark:border-slate-700 pt-3 space-y-2 mt-4">
+                <div class="flex justify-between items-center font-black text-sm">
+                    <span>المجموع الإجمالي:</span>
+                    <span id="cart-total-price" class="text-brand-700 dark:text-brand-400">0 د.ع</span>
+                </div>
+                <button onclick="sendOrderWhatsApp()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-base"></i> تأكيد وإرسال الطلب عبر الواتساب
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Tracker Modal -->
+    <div id="tracker-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-5 space-y-4">
+            <h3 class="font-black text-sm text-center">تتبع حالة الطلب الحالية 🛵</h3>
+            
+            <div class="space-y-4 text-xs font-bold">
+                <div class="flex items-center gap-3 text-emerald-600">
+                    <i class="fa-solid fa-circle-check text-base"></i>
+                    <span>تم استلام الطلب من المطعم/المحل</span>
+                </div>
+                <div class="flex items-center gap-3 text-brand-600">
+                    <i class="fa-solid fa-fire-burner text-base animate-pulse"></i>
+                    <span>جاري تحضير وتجهيز الطلب</span>
+                </div>
+                <div class="flex items-center gap-3 text-slate-400">
+                    <i class="fa-solid fa-motorcycle text-base"></i>
+                    <span>السائق في الطريق إليك</span>
+                </div>
+                <div class="flex items-center gap-3 text-slate-400">
+                    <i class="fa-solid fa-house-chimney text-base"></i>
+                    <span>تم التسليم بنجاح</span>
+                </div>
+            </div>
+
+            <button onclick="closeTrackerModal()" class="w-full bg-slate-200 dark:bg-slate-700 font-bold py-2 rounded-xl text-xs">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- Floating Live Support Button -->
+    <a href="https://api.whatsapp.com/send?phone=9647857381803&text=مرحبا،%20أحتاج%20إلى%20مساعدة%20في%20التطبيق" target="_blank" class="fixed bottom-6 right-6 z-40 bg-emerald-500 text-white p-3.5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition flex items-center justify-center">
+        <i class="fa-brands fa-whatsapp text-2xl"></i>
+    </a>
+
+    <!-- Back To Top -->
+    <button id="back-to-top" onclick="scrollToTopSmooth()" class="hidden fixed bottom-5 left-4 z-50 w-10 h-10 rounded-full bg-brand-600 text-white text-lg shadow-xl hover:scale-110 active:scale-90 transition flex items-center justify-center">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-banner" class="hidden fixed bottom-0 left-0 right-0 z-[55] bg-slate-900 dark:bg-slate-950 text-white text-[11px] p-3 flex flex-wrap items-center gap-2 border-t border-slate-700"></div>
+
+    <!-- Social Proof Toast Container -->
+    <div id="social-proof-container" class="fixed bottom-24 left-4 z-40 flex flex-col gap-2 w-56"></div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2"></div>
+
+    <!-- Index Drawer (Table of Contents) -->
+    <div id="index-drawer" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"></div>
+
+    <!-- FAQ Modal -->
+    <div id="faq-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto"></div>
+
+    <!-- Map Modal -->
+    <div id="map-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"></div>
+
+    <!-- Dashboard Modal -->
+    <div id="dashboard-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto"></div>
+
+    <!-- Notifications Panel -->
+    <div id="notifications-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto"></div>
+
+    <!-- Order History Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto"></div>
+
+    <!-- Offline Banner -->
+    <div id="offline-banner" class="hidden fixed top-9 left-0 right-0 bg-red-600 text-white text-center text-[11px] font-bold py-1.5 z-[58]"></div>
+
+    <!-- Footer: Newsletter + Referral + Links -->
+    <footer class="max-w-md mx-auto px-4 mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <div id="newsletter-box"></div>
+        <div id="referral-box"></div>
+        <div class="flex flex-wrap gap-2 justify-center mt-3">
+            <button id="faq-link" onclick="openFAQ()" class="text-[11px] font-bold text-brand-600 dark:text-brand-300 underline">الأسئلة الشائعة</button>
+            <button id="map-link" onclick="openMapModal()" class="text-[11px] font-bold text-brand-600 dark:text-brand-300 underline">فروعنا على الخريطة</button>
+            <a href="admin.html" class="text-[11px] font-bold text-amber-600 dark:text-amber-400 underline">🛡️ لوحة الإدارة</a>
+        </div>
+        <div class="flex gap-4 justify-center mt-3 text-xl">
+            <a href="https://facebook.com" target="_blank" rel="noopener" class="text-blue-600 hover:scale-110 transition"><i class="fa-brands fa-facebook"></i></a>
+            <a href="https://instagram.com/b1.mp" target="_blank" rel="noopener" class="text-pink-600 hover:scale-110 transition"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://t.me" target="_blank" rel="noopener" class="text-sky-500 hover:scale-110 transition"><i class="fa-brands fa-telegram"></i></a>
+            <a href="https://api.whatsapp.com/send?phone=9647857381803" target="_blank" rel="noopener" class="text-emerald-500 hover:scale-110 transition"><i class="fa-brands fa-whatsapp"></i></a>
+        </div>
+        <p id="working-hours" class="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-2">🕐 نعمل يومياً من 9 صباحاً حتى 12 منتصف الليل</p>
+        <p class="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-1">© 2026 خدمات الضلوعية الشامل</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
